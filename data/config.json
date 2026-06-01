@@ -1,0 +1,6 @@
+{
+  "target_url": "https://www.ebay.com",
+  "search_query": "shoes",
+  "max_price": 50.0,
+  "limit": 5
+}
