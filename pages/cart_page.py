@@ -10,12 +10,12 @@ class CartPage(BasePage):
 
     @allure.step("Asserting cart total does not exceed budget threshold")
     def assert_cart_total_not_exceeds(self, budget_per_item: float, items_count: int):
-        # במקום ללחוץ על האייקון ולהסתכן בזה שהוא מוסתר או השתנה - ניגשים ישירות ל-URL של העגלה!
+        # Avoid flakey icon clicks that might be hidden or dynamic; navigate directly to the cart URL instead.
         self.navigate("https://cart.ebay.com")
         self.page.wait_for_load_state("domcontentloaded")
-        self.page.wait_for_timeout(2000) # המתנה קלה שהמחירים יתעדכנו ב-DOM
+        self.page.wait_for_timeout(2000) # A short wait for the prices to update in the DOM
         
-        # קריאת טקסט המחיר מהאתר
+        # Parse price
         try:
             total_text = self._total_price_label.text_content()
             actual_total = self.parse_price(total_text)
@@ -24,13 +24,13 @@ class CartPage(BasePage):
             total_text = self.page.locator(".app-subtotal-stack").text_content()
             actual_total = self.parse_price(total_text)
             
-        # חישוב תקרת התקציב המותרת
+        # Calculate price limit
         allowed_threshold = budget_per_item * items_count
         
-        # צילום מסך של העגלה לדו"ח Allure
+        # Screenshot Allure
         self.take_screenshot("Cart Review Stage")
         
-        # ביצוע ה-Assertion
+        # Assertion
         with allure.step(f"Validating: Actual Total ({actual_total}) <= Allowed Threshold ({allowed_threshold})"):
             assert actual_total <= allowed_threshold, \
                 f"Budget Exceeded! Total cart cost is {actual_total}, but maximum allowed threshold was {allowed_threshold}."

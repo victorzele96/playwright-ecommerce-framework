@@ -10,7 +10,7 @@ class BasePage:
         self.page.goto(url)
 
     def take_screenshot(self, description: str):
-        """מצלם מסך ומצרף אותו אוטומטית לדו''ח של Allure"""
+        """Takes a screenshot and automatically attaches it to the Allure report."""
         screenshot_bytes = self.page.screenshot()
         allure.attach(
             screenshot_bytes, 
@@ -19,9 +19,9 @@ class BasePage:
         )
 
     def parse_price(self, price_text: str) -> float:
-        """מנקה סימני מטבע ($, ₪) וממירה מספר צף לתנאי מחיר"""
+        """Cleans currency symbols ($, ₪) and converts the value to a float for price validation."""
         if not price_text:
             return 0.0
-        # מוציא רק מספרים ונקודה עשרונית בעזרת Regex
+        # Extract only numbers and decimal points using Regex
         clean_price = re.sub(r'[^\d.]', '', price_text)
         return float(clean_price) if clean_price else 0.0

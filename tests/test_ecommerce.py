@@ -12,17 +12,17 @@ def load_config():
     with open(config_path, 'r') as file:
         return json.load(file)
 
-# אנחנו מגדירים Fixture מותאם אישית שמחביא את סימני האוטומציה
+# Define a custom fixture to hide automation footprints
 @pytest.fixture
 def human_page():
     with sync_playwright() as p:
-        # הפעלת הדפדפן עם הגדרות שמחקות דפדפן רגיל של משתמש
+        # Launch the browser with configurations that mimic a standard user browser
         browser = p.chromium.launch(
-            headless=False, # משאיר דפדפן פתוח ויזואלית
-            args=["--disable-blink-features=AutomationControlled"] # מוחק את ה-Flag של האוטומציה מה-DOM
+            headless=False, # Keep the browser window visually open
+            args=["--disable-blink-features=AutomationControlled"] # Remove the automation flag from the DOM
         )
         
-        # יצירת קונטקסט עם יוזר אייג'נט של כרום רגיל לחלוטין ומסך סטנדרטי
+        # Create context with a standard Chrome User-Agent and a default screen resolution
         context = browser.new_context(
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
             viewport={"width": 1280, "height": 720}
@@ -36,7 +36,7 @@ def human_page():
 
 @allure.epic("E-Commerce Automation Framework")
 @allure.feature("Cart Budget Enforcement")
-def test_budget_enforcement_flow(human_page): # משתמשים ב-Fixture האנושי שלנו
+def test_budget_enforcement_flow(human_page): # Utilizing our human-like behavior fixture
     config = load_config()
     ecommerce = EcommercePage(human_page)
     cart = CartPage(human_page)
@@ -45,7 +45,7 @@ def test_budget_enforcement_flow(human_page): # משתמשים ב-Fixture האנ
     ecommerce.navigate(config["target_url"])
     ecommerce.login("guest", "guest")
     
-    # 2. חיפוש תחת תנאי מחיר עם מגבלת כמות ו-Paging
+    # 2. Price-Conditioned Search with Volume Limitations and Pagination
     product_urls = ecommerce.search_items_by_name_under_price(
         query=config["search_query"], 
         max_price=config["max_price"], 
