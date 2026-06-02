@@ -34,58 +34,55 @@ class EcommercePage(BasePage):
 
     @allure.step("Searching for items: {query} with pre-filtered max price {max_price}")
     def search_items_by_name_under_price(self, query: str, max_price: float, limit: int = 5) -> list[str]:
-        # Direct navigation to the filtered URL to minimize search results efficiently
         filtered_url = f"https://www.ebay.com/sch/i.html?_nkw={query}&_udhi={int(max_price)}"
         print(f"Navigating directly to filtered URL: {filtered_url}")
         
         self.page.goto(filtered_url)
-        self.page.wait_for_load_state("domcontentloaded")
-        self.page.wait_for_timeout(3000) # Critical wait to ensure stable page loading
+        self.page.wait_for_load_state("networkidle") # Wait for all styles and elements to settle
+        self.page.wait_for_timeout(3000)
         
         valid_urls = []
         
-        # Focused data collection loop
         while len(valid_urls) < limit:
-            # --- Core Optimization ---
-            # Restrict the search scope strictly to the main results container (.srp-results)
-            # and isolate organic product title links only (.s-item__link)
-            real_products_xpath = "//img[@class='s-card__image']/ancestor::a[contains(@href, '/itm/')]"
-            links_locator = self.page.locator(real_products_xpath)
-            links_count = links_locator.count()
+            # 🎯 The Core Optimization based on your exact HTML snippet:
+            # Target the card link elements directly within the modern card layout container
+            cards_locator = self.page.locator(".su-card-container a.s-card__link")
+            links_count = cards_locator.count()
             
-            print(f"DEBUG: Found {links_count} REAL filtered product links on this page.")
+            print(f"DEBUG: Found {links_count} modern product cards on this page.")
             
+            # If for some reason the modern container layout shifts, fallback to standard item links
+            if links_count == 0:
+                cards_locator = self.page.locator("a.s-item__link")
+                links_count = cards_locator.count()
+                print(f"DEBUG: Fallback active. Found {links_count} legacy s-item__link products.")
+
             for i in range(links_count):
                 if len(valid_urls) >= limit:
                     break
                     
                 try:
-                    link_element = links_locator.nth(i)
+                    link_element = cards_locator.nth(i)
                     product_url = link_element.get_attribute("href")
                     
                     if product_url:
-                        clean_url = product_url.split("?")[0]
-                        
-                        # Additional safeguard against short dummy links (such as mock/fake IDs)
-                        url_parts = clean_url.rstrip('/').split('/')
-                        item_id = url_parts[-1] if url_parts else ""
-                        if len(item_id) < 9:
-                            continue
+                        # Ensure we don't grab empty or tracking-only links
+                        if "ebay.com/itm/" in product_url:
+                            clean_url = product_url.split("?")[0]
                             
-                        # Prevent duplicate entries
-                        if clean_url not in valid_urls:
-                            valid_urls.append(clean_url)
-                            print(f"Collected valid filtered item ({len(valid_urls)}/{limit}): {clean_url}")
+                            if clean_url not in valid_urls:
+                                valid_urls.append(clean_url)
+                                print(f"Collected valid filtered item ({len(valid_urls)}/{limit}): {clean_url}")
                 except Exception:
                     continue
             
-            # Handle pagination if necessary (edge case)
+            # Handle pagination
             if len(valid_urls) < limit:
                 next_btn = self.page.locator("a.pagination__next, a[aria-label='Go to next search page']").first
                 if next_btn.is_visible() and next_btn.is_enabled():
                     print("Moving to next page for more filtered items...")
                     next_btn.click()
-                    self.page.wait_for_timeout(2500)
+                    self.page.wait_for_timeout(3000)
                 else:
                     break
                     

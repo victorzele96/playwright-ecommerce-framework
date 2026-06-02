@@ -14,6 +14,7 @@ The framework is built from the ground up utilizing pure **Object-Oriented Progr
 ---
 
 ## 📁 Project Structure
+├── allure-results/          # report result
 ├── data/
 │   └── config.json          # Environment, target URLs, and budget limits
 ├── pages/
@@ -42,3 +43,8 @@ pytest                      # Run in Headless mode (CI/CD optimized)
 # 3. Generate & View Allure Reports
 pytest --alluredir=allure-results
 allure serve allure-results
+
+
+During development, several platform-specific constraints on eBay's production environment were isolated and resolved programmatically:
+Authentication (Login Stub / Guest Profiling)
+Assumption: To maintain execution stability and bypass defensive multi-factor authentications (Captchas/Bot-blocks), the framework executes the complete flow under a Guest Session Profile. No hard-coded live credentials are required.
